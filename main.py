@@ -5,13 +5,24 @@ from googleapiclient.http import MediaFileUpload
 from datetime import datetime
 from time import sleep
 
-cam_url = 'http://192.168.4.1/capture'
+default_IP = '192.168.4.1'
+
+cam_route = '/capture'
+
+cam_ping_route = '/ping'
 
 ap = argparse.ArgumentParser()
 
 ap.add_argument('-c', '--use_webcam', required=False,
                 help = 'use built-in camera feed')
+ap.add_argument('-i', '--IP', required=False,
+                help = 'use built-in camera feed')
 args = ap.parse_args()
+
+if args.IP != None:
+    IP_Address = args.IP
+else:
+    IP_Address = default_IP
 
 # Replace 'your-folder-id' with the actual folder ID from your Google Drive.
 FOLDER_ID = '1PynHcBWHPCvTCbOGIej3W5YxKpiNmcjQ'
@@ -42,10 +53,11 @@ def upload_file(file_path, file_name):
 if args.use_webcam == 'true':
     src, option = cv2.VideoCapture(0), True
 else:
-    src, option = cam_url, False
+    src, option = cam_route, False
     while True:
         try:
-            res = requests.get("http://192.168.4.1/ping", timeout=0.5)
+            url = 'http://' + IP_Address + cam_ping_route
+            res = requests.get(url, timeout=0.5)
         except requests.exceptions.RequestException as e:
             print("ESP32 CAM Connection Error")
             continue
@@ -63,7 +75,8 @@ while True:
         src = cv2.VideoCapture(0)
     else:
         try:
-            response = requests.get(src, timeout=0.5)
+            url = 'http://' + IP_Address + src
+            response = requests.get(url, timeout=0.5)
             image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
             frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
             height, width, channels = frame.shape

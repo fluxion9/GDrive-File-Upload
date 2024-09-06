@@ -3,8 +3,8 @@
 #include <WiFiClient.h>
 #include <esp32cam.h>
 
-const char* ssid = "CAM_32_ESP";
-const char* pswd = "CAM32-2024";
+const char* ssid = "ESP32";
+const char* pswd = "clintme1";
 
 AsyncWebServer server(80);
 
@@ -14,7 +14,6 @@ static auto midRes = esp32cam::Resolution::find(350, 530);
 static auto hiRes = esp32cam::Resolution::find(800, 600);
 
 void setup() {
-  Serial.begin(9600);
   {
     using namespace esp32cam;
     Config cfg;
@@ -25,17 +24,31 @@ void setup() {
     bool ok = Camera.begin(cfg);
     //Serial.println(ok ? "CAMERA OK" : "CAMERA FAIL");
   }
-  WiFi.softAP(ssid, pswd);
-  IPAddress IP = WiFi.softAPIP();
+  WiFi.mode(WIFI_MODE_STA);
+  // WiFi.softAP(ssid, pswd);
+  // IPAddress IP = WiFi.softAPIP();
+  // Serial.println();
+  // Serial.println(IP);
+  Serial.begin(115200);
+  delay(1000);
   Serial.println();
-  Serial.println(IP);
+
+  WiFi.begin(ssid, pswd);
+
+  Serial.print("Connecting.");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("Connected --- IP: ");
+  Serial.println(WiFi.localIP());
 
   server.on("/capture", HTTP_GET, [](AsyncWebServerRequest* request) {
     auto frame = esp32cam::capture();
     if (frame == nullptr) {
       request->send(503);
-    }
-    else {
+    } else {
       AsyncWebServerResponse* response = request->beginResponse_P(200, "image/jpeg", frame->data(), frame->size());
       request->send(response);
     }
@@ -49,4 +62,14 @@ void setup() {
 }
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Reconnecting.");
+    while (WiFi.status() != WL_CONNECTED) {
+      Serial.print('.');
+      delay(500);
+    }
+    Serial.println();
+    Serial.print("Connected --- IP: ");
+    Serial.println(WiFi.localIP());
+  }
 }
