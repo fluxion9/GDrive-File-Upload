@@ -1,0 +1,5 @@
+google_api_python_client==2.143.0
+numpy==1.21.5
+opencv_python==4.10.0.84
+protobuf==3.12.4
+Requests==2.32.3
